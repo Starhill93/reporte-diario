@@ -1,0 +1,38 @@
+name: Consulta Amigable
+
+# Consulta la Consulta Amigable del MEF y guarda datos/consulta_amigable.json,
+# que lee la página del reporte diario (index.html).
+on:
+  schedule:
+    - cron: "0 12-23 * * 1-5"   # cada hora de 7:00 a.m. a 6:00 p.m. (hora de Lima), lunes a viernes
+  workflow_dispatch:            # botón "Run workflow" para actualizar cuando quieras
+
+permissions:
+  contents: write
+
+concurrency:
+  group: consulta-amigable
+  cancel-in-progress: false
+
+jobs:
+  consultar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - run: python ca/consulta_amigable.py
+      - name: Guardar cambios
+        run: |
+          if [ -n "$(git status --porcelain datos)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+            git add datos/consulta_amigable.json
+            git commit -m "Consulta Amigable $(TZ=America/Lima date '+%d/%m/%Y %H:%M')"
+            git push
+          else
+            echo "Sin cambios"
+          fi
