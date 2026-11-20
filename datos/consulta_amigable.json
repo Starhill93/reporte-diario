@@ -1,0 +1,98 @@
+{
+ "consultado": "2026-11-20T17:35",
+ "anio": 2026,
+ "ues": [
+  {
+   "codigo": "001-1087",
+   "nombre": "MINISTERIO DE LA MUJER Y POBLACIONES VULNERABLES- ADM. NIVEL CENTRAL",
+   "pia": 218131283.0,
+   "pim": 221167609.0,
+   "cert": 207012485.64,
+   "comp": 202519276.06,
+   "dev": 172158457.94
+  },
+  {
+   "codigo": "006-1160",
+   "nombre": "PROGRAMA INTEGRAL NACIONAL PARA EL BIENESTAR FAMILIAR- INABIF",
+   "pia": 448367312.0,
+   "pim": 448541361.0,
+   "cert": 434941808.55,
+   "comp": 430448083.51,
+   "dev": 365030525.32
+  },
+  {
+   "codigo": "009-1232",
+   "nombre": "PROGRAMA NACIONAL CONTRA LA VIOLENCIA FAMILIAR Y SEXUAL (PNCVFS)",
+   "pia": 374037199.0,
+   "pim": 372649212.0,
+   "cert": 366702212.83,
+   "comp": 363426600.89,
+   "dev": 321736177.12
+  }
+ ],
+ "fen": {
+  "codigo": "5006412",
+  "nombre": "INTERVENCIONES EXTRAORDINARIAS DEL FENOMENO EL NIÑO - FEN",
+  "pia": 0.0,
+  "pim": 10900474.0,
+  "cert": 4279408.87,
+  "comp": 1999800.0,
+  "dev": 0.0
+ },
+ "fen_ues": [
+  {
+   "codigo": "001-1087",
+   "nombre": "MINISTERIO DE LA MUJER Y POBLACIONES VULNERABLES- ADM. NIVEL CENTRAL",
+   "pia": 0.0,
+   "pim": 2230404.0,
+   "cert": 432699.94,
+   "comp": 425090.74,
+   "dev": 100419.85
+  },
+  {
+   "codigo": "006-1160",
+   "nombre": "PROGRAMA INTEGRAL NACIONAL PARA EL BIENESTAR FAMILIAR- INABIF",
+   "pia": 0.0,
+   "pim": 10900474.0,
+   "cert": 4279408.87,
+   "comp": 1999800.0,
+   "dev": 0.0
+  },
+  {
+   "codigo": "009-1232",
+   "nombre": "PROGRAMA NACIONAL CONTRA LA VIOLENCIA FAMILIAR Y SEXUAL (PNCVFS)",
+   "pia": 0.0,
+   "pim": 1499950.0,
+   "cert": 1412569.67,
+   "comp": 1380089.4,
+   "dev": 584039.39
+  }
+ ],
+ "historico": [
+  {
+   "anio": 2022,
+   "pim": 275446752.0,
+   "dev": 269462748.29
+  },
+  {
+   "anio": 2023,
+   "pim": 357335311.0,
+   "dev": 352689418.58
+  },
+  {
+   "anio": 2024,
+   "pim": 422478748.0,
+   "dev": 417260516.99
+  },
+  {
+   "anio": 2025,
+   "pim": 436635754.0,
+   "dev": 433791813.43
+  },
+  {
+   "anio": 2026,
+   "pim": 448541361.0,
+   "dev": 365030525.32
+  }
+ ]
+}
