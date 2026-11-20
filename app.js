@@ -18,7 +18,7 @@
   const Y_FIN = 5.3;                       // borde inferior de la tabla
   const PESOS_U = [3.3, 1.0, 1.05, 0.74, 1.05, 0.74, 1.05, 0.74, 1.2];      // reporte_unidades.py
   const PESOS_CA = [2.4, 1.25, 1.25, 0.62, 1.25, 0.62, 1.25, 0.62, 1.25];   // reporte_consulta_amigable.py
-  const CABECERAS = ["PIM", "CERTIFICADO", "%", "COMPROMISO", "%", "DEVENGADO", "%", "SALDO POR DEVENGAR"];
+  const CABECERAS = ["PIM", "CERTIFICADO", "%", "COMPROMISO", "%", "DEVENGADO", "%", "PIM - CERTIFICADO"];
   const BASE = new URL("img/", document.currentScript.src).href;     // imágenes junto a app.js
   const IMG = Object.fromEntries(Object.entries({
     fondo: "fondo_portada.jpg", logo_color: "logo_mimp_inabif_color.png",
@@ -68,7 +68,7 @@
   const fechaTxt = d => `${p2(d.getDate())}/${p2(d.getMonth() + 1)}/${d.getFullYear()}`;
   const mill = (v, dec = 2) => Math.abs(v) < 1e6 ? `S/ ${miles(v)}` : `S/ ${(v / 1e6).toFixed(dec).replace(/\.?0+$/, "")} mill`;
   const celdas = (f, etq) => [etq, miles(f.pim), miles(f.cert), fpct(pct(f, f.cert)), miles(f.comp),
-    fpct(pct(f, f.comp)), miles(f.dev), fpct(pct(f, f.dev)), miles(f.pim - f.dev)];
+    fpct(pct(f, f.comp)), miles(f.dev), fpct(pct(f, f.dev)), miles(f.pim - f.cert)];
   const porDevengado = filas => [...filas].sort((a, b) => pct(b.f, b.f.dev) - pct(a.f, a.f.dev));
 
   // ── Lectura del Excel ─────────────────────────────────────────────────
