@@ -225,15 +225,15 @@
   // Nota de la lámina "Presupuesto ordinario y FEN": de dónde sale el FEN (NM 330)
   const NOTA_FEN = [
     { text: "Nota: ", options: { bold: true } },
-    { text: "La RM N.° 545-2026-MIMP asignó a INABIF " },
+    { text: "Mediante la RM N.° 545-2026-MIMP, del 5 de noviembre de 2026, que aprueba el crédito suplementario en el marco del Fenómeno El Niño, se asignó a INABIF " },
     { text: "S/ 13,615,627", options: { bold: true } },
     { text: ", de los cuales " },
     { text: "S/ 10,900,474", options: { bold: true } },
-    { text: " se destinan a la actividad FEN, para acciones de contingencia, y " },
+    { text: " corresponden a la ejecución del Plan de Acción de Contingencia ante el FEN, y " },
     { text: "S/ 2,715,153", options: { bold: true } },
-    { text: " forman parte del presupuesto ordinario y se distribuyen de la siguiente manera: S/ 2,463,076 para el proyecto de inversión con CUI 2197584 «Mejoramiento y ampliación de los servicios de protección integral a adolescentes mujeres en el CAR Ermelinda Carrera» y S/ 252,077 para atención al ciudadano y a la familia en emergencia social." },
+    { text: " forman parte del presupuesto ordinario y se distribuyen de la siguiente manera: S/ 2,463,076 corresponden al proyecto de inversión con CUI 2197584 «Mejoramiento y ampliación de los servicios de protección integral a adolescentes mujeres en el CAR Ermelinda Carrera» y S/ 252,077 a la atención al ciudadano y a la familia en emergencia social." },
   ];
-  function notaFen(s, y = 4.76) {
+  function notaFen(s, y = 4.66) {
     s.addText(NOTA_FEN.map(p => ({ text: p.text, options: { ...(p.options || {}) } })),
       { x: XT, y, w: ANCHO_T, h: Y_FIN - y + 0.02, fontFace: FUENTE, fontSize: 8, color: C.texto, valign: "middle",
         fill: { color: C.blanco }, line: { color: C.borde, width: 0.75 }, margin: [7.2, 7.2, 3.6, 3.6] });
@@ -324,7 +324,7 @@
       s = interior(pptx);
       encabezadoRojo(s, `INABIF – PRESUPUESTO ORDINARIO Y FEN – ${hoy}`);
       const ordinario = restar(inabif, fen, "Presupuesto ordinario");
-      tablaLlena(s, "PRESUPUESTO", [{ f: ordinario, nombre: ordinario.nombre }, { f: fen, nombre: fen.nombre }], inabif, 4.66);
+      tablaLlena(s, "PRESUPUESTO", [{ f: ordinario, nombre: ordinario.nombre }, { f: fen, nombre: fen.nombre }], inabif, 4.56);
       notaFen(s);
       nota(s, notaCA);
 
