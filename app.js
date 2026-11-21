@@ -227,11 +227,11 @@
     { text: "Nota: ", options: { bold: true } },
     { text: "La RM N.° 545-2026-MIMP asignó a INABIF " },
     { text: "S/ 13,615,627", options: { bold: true } },
-    { text: ": " },
+    { text: ", de los cuales " },
     { text: "S/ 10,900,474", options: { bold: true } },
-    { text: " a la actividad FEN, para acciones de contingencia, y " },
+    { text: " se destinan a la actividad FEN, para acciones de contingencia, y " },
     { text: "S/ 2,715,153", options: { bold: true } },
-    { text: " que forman parte del presupuesto ordinario y se distribuyen de la siguiente manera: S/ 2,463,076 para el proyecto de inversión con CUI 2197584 «Mejoramiento y ampliación de los servicios de protección integral a adolescentes mujeres en el CAR Ermelinda Carrera» y S/ 252,077 para atención al ciudadano y a la familia en emergencia social." },
+    { text: " forman parte del presupuesto ordinario y se distribuyen de la siguiente manera: S/ 2,463,076 para el proyecto de inversión con CUI 2197584 «Mejoramiento y ampliación de los servicios de protección integral a adolescentes mujeres en el CAR Ermelinda Carrera» y S/ 252,077 para atención al ciudadano y a la familia en emergencia social." },
   ];
   function notaFen(s, y = 4.76) {
     s.addText(NOTA_FEN.map(p => ({ text: p.text, options: { ...(p.options || {}) } })),
