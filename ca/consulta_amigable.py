@@ -127,58 +127,73 @@ def es_inabif(f: dict) -> bool:
     return f["codigo"].endswith(f"-{UE}") or f["codigo"] == UE
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--salida", type=Path, default=RAIZ / "datos" / "consulta_amigable.json")
-    ap.add_argument("--desde", type=int, default=2022)
-    ap.add_argument("--anio", type=int, default=datetime.now(LIMA).year)
-    args = ap.parse_args()
-
+def actualizar(salida: Path, js: Path | None = None, desde: int = 2022, anio: int | None = None,
+               siempre: bool = False, log=print) -> dict:
+    """Consulta la Consulta Amigable y guarda el .json (y el .js si se pide). Devuelve los datos."""
+    anio = anio or datetime.now(LIMA).year
     previo = {}
-    if args.salida.exists():
+    if salida.exists():
         try:
-            previo = json.loads(args.salida.read_text(encoding="utf-8"))
+            previo = json.loads(salida.read_text(encoding="utf-8"))
         except ValueError:
             pass
-    cerrados = {h["anio"]: h for h in previo.get("historico", []) if h["anio"] < args.anio}
+    cerrados = {h["anio"]: h for h in previo.get("historico", []) if h["anio"] < anio}
 
-    ues, fen = ues_del_pliego(args.anio, con_fen=True)
+    ues, fen = ues_del_pliego(anio, con_fen=True)
     inabif = next((u for u in ues if es_inabif(u)), None)
     if inabif is None:
         raise RuntimeError(f"No aparece la UE {UE}")
-    print(f"{args.anio}: {len(ues)} UEs · INABIF PIM {inabif['pim']:,.0f} · FEN PIM {(fen or {}).get('pim', 0):,.0f}")
-    fen_ues = fen_por_ue(args.anio)
-    print(f"FEN por UE: {len(fen_ues)}")
+    log(f"{anio}: {len(ues)} UEs · INABIF PIM {inabif['pim']:,.0f} · FEN PIM {(fen or {}).get('pim', 0):,.0f}")
+    fen_ues = fen_por_ue(anio)
+    log(f"FEN por UE: {len(fen_ues)}")
 
     historico = []
-    for a in range(args.desde, args.anio):
-        if a not in cerrados:
+    for a in range(desde, anio):
+        if a not in cerrados:            # los años cerrados no cambian: se consultan una sola vez
             u, _ = ues_del_pliego(a, con_fen=False)
             f = next((x for x in u if es_inabif(x)), None)
             if f is None:
-                print(f"{a}: sin INABIF, se omite")
+                log(f"{a}: sin INABIF, se omite")
                 continue
             cerrados[a] = {"anio": a, "pim": f["pim"], "dev": f["dev"]}
-            print(f"{a}: PIM {f['pim']:,.0f} · dev {f['dev']:,.0f}")
+            log(f"{a}: PIM {f['pim']:,.0f} · dev {f['dev']:,.0f}")
         historico.append(cerrados[a])
-    historico.append({"anio": args.anio, "pim": inabif["pim"], "dev": inabif["dev"]})
+    historico.append({"anio": anio, "pim": inabif["pim"], "dev": inabif["dev"]})
 
     datos = {
         "consultado": datetime.now(LIMA).strftime("%Y-%m-%dT%H:%M"),
-        "anio": args.anio,
+        "anio": anio,
         "ues": ues,
         "fen": fen,
         "fen_ues": fen_ues,
         "historico": historico,
     }
-    # si las cifras no cambiaron, no se reescribe (así no hay commit cada hora)
+    # si las cifras no cambiaron, no se reescribe (así GitHub no hace un commit cada hora)
     sin_hora = lambda d: {k: v for k, v in d.items() if k != "consultado"}
-    if previo and sin_hora(previo) == sin_hora(datos):
-        print("Sin cambios")
-        return
-    args.salida.parent.mkdir(parents=True, exist_ok=True)
-    args.salida.write_text(json.dumps(datos, ensure_ascii=False, indent=1), encoding="utf-8")
-    print(f"Guardado {args.salida}")
+    if not siempre and previo and sin_hora(previo) == sin_hora(datos):
+        log("Sin cambios")
+        return datos
+    texto = json.dumps(datos, ensure_ascii=False, indent=1)
+    salida.parent.mkdir(parents=True, exist_ok=True)
+    salida.write_text(texto, encoding="utf-8")
+    log(f"Guardado {salida}")
+    if js:
+        js.parent.mkdir(parents=True, exist_ok=True)
+        js.write_text(f"window.CA_LOCAL = {texto};\n", encoding="utf-8")
+        log(f"Guardado {js}")
+    return datos
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--salida", type=Path, default=RAIZ / "datos" / "consulta_amigable.json")
+    ap.add_argument("--desde", type=int, default=2022)
+    ap.add_argument("--anio", type=int, default=datetime.now(LIMA).year)
+    ap.add_argument("--js", type=Path, default=None,
+                    help="Además guarda una copia .js (window.CA_LOCAL) para abrir la página con doble clic")
+    ap.add_argument("--siempre", action="store_true", help="Guardar aunque las cifras no hayan cambiado")
+    args = ap.parse_args()
+    actualizar(args.salida, args.js, args.desde, args.anio, args.siempre)
 
 
 if __name__ == "__main__":
