@@ -24,6 +24,7 @@
   .ok { color: #2E7D6E; font-weight: 600; } .mal { color: var(--rojo); font-weight: 600; }
   button { font: inherit; font-weight: 700; border: 0; border-radius: 8px; padding: 12px 22px; cursor: pointer; background: var(--rojo); color: #fff; font-size: 16px; }
   button:disabled { background: var(--gris); cursor: default; }
+  button.sec { background: #fff; color: var(--navy); border: 1px solid var(--navy); margin-left: 8px; }
   .avisos { color: #8a5a00; font-size: 13px; margin: 8px 0 0; padding-left: 18px; }
   .estado { min-height: 20px; font-size: 14px; margin-top: 10px; }
 </style>
@@ -50,7 +51,8 @@
 
   <section class="tarjeta">
     <h2>3 · Presentación</h2>
-    <button id="btnPptx" type="button" disabled>Descargar PPTX</button>
+    <button id="btnPptx" type="button" disabled>Generar PPTX</button>
+    <button id="btnCarpeta" type="button" class="sec" hidden>Abrir carpeta de reportes</button>
     <div class="estado" id="estado" role="status"></div>
   </section>
 </main>
@@ -58,24 +60,68 @@
 <script src="lib/xlsx.full.min.js"></script>
 <script src="lib/jszip.min.js"></script>
 <script src="lib/pptxgen.bundle.js"></script>
+<script src="img/logos.js" onerror="void 0"></script>
+<script src="../data/consulta_amigable.js" onerror="void 0"></script>
 <script src="app.js"></script>
 <script>
 (() => {
   const R = window.ReporteDiario, $ = id => document.getElementById(id);
   let EX = null, CA = null, FECHA = null;
 
-  const listo = () => { $("btnPptx").disabled = !EX; };
+  let consultando = false;
+  const listo = () => { $("btnPptx").disabled = !EX || consultando; };
+  const hora = c => `${R.fechaTxt(c)} ${String(c.getHours()).padStart(2, "0")}:${String(c.getMinutes()).padStart(2, "0")}`;
 
-  fetch("datos/consulta_amigable.json?t=" + Date.now(), { cache: "no-store" })
-    .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
-    .then(d => {
-      CA = d;
-      const c = new Date(d.consultado);
-      const horas = (Date.now() - c) / 36e5;
-      $("estCA").textContent = `consultado el ${R.fechaTxt(c)} ${String(c.getHours()).padStart(2, "0")}:${String(c.getMinutes()).padStart(2, "0")}`;
-      $("estCA").className = horas < 24 ? "ok" : "mal";
-    })
-    .catch(() => { $("estCA").textContent = "no disponible (se omiten las láminas 2 a 5)"; $("estCA").className = "mal"; });
+  // Consulta Amigable
+  //  · Abierta con «Reporte diario» (servidor de Python en tu PC): se consulta EN VIVO al abrir.
+  //  · Si no se puede (o se abrió el index.html directo / desde GitHub): se usa la copia guardada
+  //    más reciente entre la de tu PC (../data/consulta_amigable.js) y la de GitHub.
+  const ONLINE = "https://starhill93.github.io/reporte-diario/datos/consulta_amigable.json";
+  const archivo = location.protocol === "file:";
+  const conServidor = /^https?:$/.test(location.protocol) && /^(127\.0\.0\.1|localhost)$/.test(location.hostname);
+
+  function usar(d, origen, aviso) {
+    CA = d;
+    const c = new Date(d.consultado);
+    $("estCA").textContent = `consultado el ${hora(c)} (${origen})` + (aviso ? " · " + aviso : "");
+    $("estCA").className = (Date.now() - c) / 36e5 < 24 && !aviso ? "ok" : "mal";
+  }
+
+  async function guardada(aviso) {
+    const candidatos = [];
+    if (window.CA_LOCAL) candidatos.push({ d: window.CA_LOCAL, origen: "guardada en tu PC" });
+    try {
+      const url = (archivo || conServidor ? ONLINE : "datos/consulta_amigable.json") + "?t=" + Date.now();
+      const r = await fetch(url, { cache: "no-store" });
+      if (r.ok) candidatos.push({ d: await r.json(), origen: "GitHub" });
+    } catch (e) { /* sin internet */ }
+    if (!candidatos.length) {
+      $("estCA").textContent = "sin datos (se omiten las láminas 2 a 5)" + (aviso ? " · " + aviso : "");
+      $("estCA").className = "mal";
+      return;
+    }
+    candidatos.sort((a, b) => String(b.d.consultado).localeCompare(String(a.d.consultado)));
+    usar(candidatos[0].d, candidatos[0].origen, aviso);
+  }
+
+  async function enVivo() {
+    consultando = true; listo();
+    $("estCA").textContent = "consultando en vivo al MEF… (hasta 1 minuto)"; $("estCA").className = "";
+    try {
+      const r = await fetch("/api/consulta?t=" + Date.now(), { cache: "no-store" });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || r.status);
+      usar(d, "en vivo");
+    } catch (e) {
+      console.error(e);
+      await guardada("no se pudo consultar en vivo");
+    } finally {
+      consultando = false; listo();
+    }
+  }
+
+  if (conServidor) enVivo();
+  else guardada(archivo ? "para consultar en vivo abre «Reporte diario»" : "");
 
   async function cargar(file) {
     $("estExcel").textContent = "leyendo…"; $("estExcel").className = "";
@@ -102,24 +148,41 @@
   window.addEventListener("dragover", e => e.preventDefault());
   window.addEventListener("drop", e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) cargar(f); });
 
+  // Con «Reporte diario» (servidor de Python) el PPTX se guarda en data\reportes; si no, se descarga.
+  if (conServidor) $("btnCarpeta").hidden = false;
+  $("btnCarpeta").addEventListener("click", () => fetch("/api/abrir"));
+
+  function descargar(blob, nombre) {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = nombre;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+  }
+
   $("btnPptx").addEventListener("click", async () => {
     const b = $("btnPptx");
-    b.disabled = true; b.textContent = "Generando…"; $("estado").textContent = "";
+    b.disabled = true; b.textContent = "Generando…"; $("estado").textContent = ""; $("estado").className = "estado";
     try {
       const blob = await R.generar(EX, CA, FECHA);
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob); a.download = R.nombreArchivo(FECHA);
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(a.href), 10000);
-      $("estado").textContent = "Listo: " + a.download;
+      const nombre = R.nombreArchivo(FECHA);
+      if (conServidor) {
+        const r = await fetch("/api/guardar?nombre=" + encodeURIComponent(nombre), { method: "POST", body: blob });
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error || r.status);
+        $("estado").textContent = "✔ Guardado en " + d.ruta;
+        $("estado").className = "estado ok";
+      } else {
+        descargar(blob, nombre);
+        $("estado").textContent = "✔ Descargado: " + nombre;
+      }
     } catch (e) {
       console.error(e);
       $("estado").textContent = "No se pudo generar: " + (e.message || e);
+      $("estado").className = "estado mal";
     } finally {
-      b.textContent = "Descargar PPTX"; listo();
+      b.textContent = "Generar PPTX"; listo();
     }
-  });
-})();
+  });})();
 </script>
 </body>
 </html>

@@ -18,13 +18,15 @@
   const Y_FIN = 5.3;                       // borde inferior de la tabla
   const PESOS_U = [3.3, 1.0, 1.05, 0.74, 1.05, 0.74, 1.05, 0.74, 1.2];      // reporte_unidades.py
   const PESOS_CA = [2.4, 1.25, 1.25, 0.62, 1.25, 0.62, 1.25, 0.62, 1.25];   // reporte_consulta_amigable.py
-  const CABECERAS = ["PIM", "CERTIFICADO", "%", "COMPROMISO", "%", "DEVENGADO", "%", "PIM - CERTIFICADO"];
-  const BASE = new URL("img/", document.currentScript.src).href;     // imágenes junto a app.js
+  const CABECERAS = ["PIM", "CERTIFICADO", "%", "COMPROMISO", "%", "DEVENGADO", "%", "SALDO POR CERTIFICAR"];
+  // Imágenes: si está img/logos.js (versión local, doble clic) van embebidas; si no, se leen de img/
+  const BASE = new URL("img/", document.currentScript.src).href;
   const IMG = Object.fromEntries(Object.entries({
     fondo: "fondo_portada.jpg", logo_color: "logo_mimp_inabif_color.png",
     pr_color: "logo_peru_responde_color.png", mimp_gris: "logo_mimp_gris.png",
     inabif_gris: "logo_inabif_gris.png", pr_gris: "logo_peru_responde_gris.png",
-  }).map(([k, f]) => [k, BASE + f]));
+  }).map(([k, f]) => [k, (window.LOGOS_DIARIO && window.LOGOS_DIARIO[k]) ? { data: window.LOGOS_DIARIO[k] } : { path: BASE + f }]));
+  const imagen = (s, k, x, y, w, h) => s.addImage({ ...IMG[k], x, y, w, h });
 
   // ── Datos del Excel (reporte_unidades.py) ─────────────────────────────
   const UNIDADES = [
@@ -140,19 +142,19 @@
     const s = pptx.addSlide();
     s.background = { color: C.fondo };
     banda(s, 0.563);
-    s.addImage({ path: IMG.mimp_gris, x: 0.591, y: -0.031, w: 1.823, h: 0.682 });
-    s.addImage({ path: IMG.inabif_gris, x: 2.544, y: 0.096, w: 1.078, h: 0.371 });
-    s.addImage({ path: IMG.pr_gris, x: 7.439, y: -0.058, w: 1.672, h: 0.691 });
+    imagen(s, "mimp_gris", 0.591, -0.031, 1.823, 0.682);
+    imagen(s, "inabif_gris", 2.544, 0.096, 1.078, 0.371);
+    imagen(s, "pr_gris", 7.439, -0.058, 1.672, 0.691);
     return s;
   }
 
   function portada(pptx, hoy) {
     const s = pptx.addSlide();
     s.background = { color: C.rojo };
-    s.addImage({ path: IMG.fondo, x: 0, y: 0, w: 10, h: 5.625 });
+    imagen(s, "fondo", 0, 0, 10, 5.625);
     banda(s, 0.681);
-    s.addImage({ path: IMG.logo_color, x: 0.511, y: 0.029, w: 3.391, h: 0.681 });
-    s.addImage({ path: IMG.pr_color, x: 7.152, y: -0.079, w: 2.065, h: 0.853 });
+    imagen(s, "logo_color", 0.511, 0.029, 3.391, 0.681);
+    imagen(s, "pr_color", 7.152, -0.079, 2.065, 0.853);
     s.addShape("line", { x: 0.885, y: 3.708, w: 6.468, h: 0, line: { color: C.blanco, width: 1.5 } });
     s.addText([
       { text: "AVANCE DE EJECUCIÓN PRESUPUESTAL", options: { breakLine: true } },
@@ -186,9 +188,9 @@
 
   /* Tabla que llena el alto libre: con pocas filas, filas más altas y letra más grande.
      filas: [{f, nombre}] · cabFija: alto fijo de la cabecera (el sobrante va a las filas) */
-  function tabla(s, etiqueta, filas, total, y, { filaMax = 0.44, fontMax = 10.5, pesos = PESOS_U, cabFija = null } = {}) {
+  function tabla(s, etiqueta, filas, total, y, { filaMax = 0.44, fontMax = 10.5, pesos = PESOS_U, cabFija = null, yFin = Y_FIN } = {}) {
     const n = filas.length + 2;
-    const rh = Math.min(filaMax, (Y_FIN - y - 0.28) / n);
+    const rh = Math.min(filaMax, (yFin - y - 0.28) / n);
     const font = Math.max(7, Math.min(fontMax, Math.round(rh * 27 * 2) / 2));
     const fCab = Math.min(font + 0.5, 8.5);
     tarjeta(s, XT, y, ANCHO_T, 0.1 + n * rh + 0.18);
@@ -214,10 +216,27 @@
   }
 
   // tablas de la Consulta Amigable (reporte_consulta_amigable.py · tabla_llena)
-  function tablaLlena(s, etiqueta, filas, total) {
+  function tablaLlena(s, etiqueta, filas, total, yFin = Y_FIN) {
     const grande = ["pim", "cert", "comp", "dev"].some(k => Math.abs(total[k]) >= 1e9);
     tabla(s, etiqueta, porDevengado(filas), total, 1.18,
-      { filaMax: 1.2, fontMax: grande ? 9.5 : 10.5, pesos: PESOS_CA, cabFija: 0.42 });
+      { filaMax: 1.2, fontMax: grande ? 9.5 : 10.5, pesos: PESOS_CA, cabFija: 0.42, yFin });
+  }
+
+  // Nota de la lámina "Presupuesto ordinario y FEN": de dónde sale el FEN (NM 330)
+  const NOTA_FEN = [
+    { text: "Nota: ", options: { bold: true } },
+    { text: "La RM N.° 545-2026-MIMP asignó a INABIF " },
+    { text: "S/ 13,615,627", options: { bold: true } },
+    { text: ": " },
+    { text: "S/ 10,900,474", options: { bold: true } },
+    { text: " a la actividad FEN, para acciones de contingencia, y " },
+    { text: "S/ 2,715,153", options: { bold: true } },
+    { text: " que forman parte del presupuesto ordinario y se distribuyen de la siguiente manera: S/ 2,463,076 para el proyecto de inversión con CUI 2197584 «Mejoramiento y ampliación de los servicios de protección integral a adolescentes mujeres en el CAR Ermelinda Carrera» y S/ 252,077 para atención al ciudadano y a la familia en emergencia social." },
+  ];
+  function notaFen(s, y = 4.76) {
+    s.addText(NOTA_FEN.map(p => ({ text: p.text, options: { ...(p.options || {}) } })),
+      { x: XT, y, w: ANCHO_T, h: Y_FIN - y + 0.02, fontFace: FUENTE, fontSize: 8, color: C.texto, valign: "middle",
+        fill: { color: C.blanco }, line: { color: C.borde, width: 0.75 }, margin: [7.2, 7.2, 3.6, 3.6] });
   }
 
   function indicadoresFen(s, t, y = 1.2, h = 0.76) {
@@ -305,7 +324,8 @@
       s = interior(pptx);
       encabezadoRojo(s, `INABIF – PRESUPUESTO ORDINARIO Y FEN – ${hoy}`);
       const ordinario = restar(inabif, fen, "Presupuesto ordinario");
-      tablaLlena(s, "PRESUPUESTO", [{ f: ordinario, nombre: ordinario.nombre }, { f: fen, nombre: fen.nombre }], inabif);
+      tablaLlena(s, "PRESUPUESTO", [{ f: ordinario, nombre: ordinario.nombre }, { f: fen, nombre: fen.nombre }], inabif, 4.66);
+      notaFen(s);
       nota(s, notaCA);
 
       if (ca.fen_ues && ca.fen_ues.length) {
