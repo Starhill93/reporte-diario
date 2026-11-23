@@ -1,5 +1,5 @@
 {
- "consultado": "2026-11-20T17:35",
+ "consultado": "2026-11-23T08:18",
  "anio": 2026,
  "ues": [
   {
@@ -7,27 +7,27 @@
    "nombre": "MINISTERIO DE LA MUJER Y POBLACIONES VULNERABLES- ADM. NIVEL CENTRAL",
    "pia": 218131283.0,
    "pim": 221167609.0,
-   "cert": 207012485.64,
-   "comp": 202519276.06,
-   "dev": 172158457.94
+   "cert": 207051321.64,
+   "comp": 203071584.75,
+   "dev": 172742681.88
   },
   {
    "codigo": "006-1160",
    "nombre": "PROGRAMA INTEGRAL NACIONAL PARA EL BIENESTAR FAMILIAR- INABIF",
    "pia": 448367312.0,
    "pim": 448541361.0,
-   "cert": 434941808.55,
-   "comp": 430448083.51,
-   "dev": 365030525.32
+   "cert": 436139219.63,
+   "comp": 431126252.85,
+   "dev": 365293939.94
   },
   {
    "codigo": "009-1232",
    "nombre": "PROGRAMA NACIONAL CONTRA LA VIOLENCIA FAMILIAR Y SEXUAL (PNCVFS)",
    "pia": 374037199.0,
    "pim": 372649212.0,
-   "cert": 366702212.83,
-   "comp": 363426600.89,
-   "dev": 321736177.12
+   "cert": 366756656.39,
+   "comp": 363510715.28,
+   "dev": 321965194.56
   }
  ],
  "fen": {
@@ -35,8 +35,8 @@
   "nombre": "INTERVENCIONES EXTRAORDINARIAS DEL FENOMENO EL NIÑO - FEN",
   "pia": 0.0,
   "pim": 10900474.0,
-  "cert": 4279408.87,
-  "comp": 1999800.0,
+  "cert": 5137263.71,
+  "comp": 2330750.0,
   "dev": 0.0
  },
  "fen_ues": [
@@ -54,8 +54,8 @@
    "nombre": "PROGRAMA INTEGRAL NACIONAL PARA EL BIENESTAR FAMILIAR- INABIF",
    "pia": 0.0,
    "pim": 10900474.0,
-   "cert": 4279408.87,
-   "comp": 1999800.0,
+   "cert": 5137263.71,
+   "comp": 2330750.0,
    "dev": 0.0
   },
   {
@@ -64,8 +64,8 @@
    "pia": 0.0,
    "pim": 1499950.0,
    "cert": 1412569.67,
-   "comp": 1380089.4,
-   "dev": 584039.39
+   "comp": 1412569.67,
+   "dev": 616519.66
   }
  ],
  "historico": [
@@ -92,7 +92,7 @@
   {
    "anio": 2026,
    "pim": 448541361.0,
-   "dev": 365030525.32
+   "dev": 365293939.94
   }
  ]
 }
