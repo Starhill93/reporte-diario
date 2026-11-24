@@ -1,5 +1,5 @@
 {
- "consultado": "2026-11-23T08:18",
+ "consultado": "2026-11-24T16:36",
  "anio": 2026,
  "ues": [
   {
@@ -7,27 +7,27 @@
    "nombre": "MINISTERIO DE LA MUJER Y POBLACIONES VULNERABLES- ADM. NIVEL CENTRAL",
    "pia": 218131283.0,
    "pim": 221167609.0,
-   "cert": 207051321.64,
-   "comp": 203071584.75,
-   "dev": 172742681.88
+   "cert": 207025508.91,
+   "comp": 203082274.53,
+   "dev": 172958921.91
   },
   {
    "codigo": "006-1160",
    "nombre": "PROGRAMA INTEGRAL NACIONAL PARA EL BIENESTAR FAMILIAR- INABIF",
    "pia": 448367312.0,
    "pim": 448541361.0,
-   "cert": 436139219.63,
-   "comp": 431126252.85,
-   "dev": 365293939.94
+   "cert": 436165849.43,
+   "comp": 431137323.85,
+   "dev": 365633302.28
   },
   {
    "codigo": "009-1232",
    "nombre": "PROGRAMA NACIONAL CONTRA LA VIOLENCIA FAMILIAR Y SEXUAL (PNCVFS)",
    "pia": 374037199.0,
    "pim": 372649212.0,
-   "cert": 366756656.39,
-   "comp": 363510715.28,
-   "dev": 321965194.56
+   "cert": 366796198.42,
+   "comp": 362961981.4,
+   "dev": 322160890.36
   }
  ],
  "fen": {
@@ -35,8 +35,8 @@
   "nombre": "INTERVENCIONES EXTRAORDINARIAS DEL FENOMENO EL NIÑO - FEN",
   "pia": 0.0,
   "pim": 10900474.0,
-  "cert": 5137263.71,
-  "comp": 2330750.0,
+  "cert": 5152763.71,
+  "comp": 2357250.0,
   "dev": 0.0
  },
  "fen_ues": [
@@ -47,15 +47,15 @@
    "pim": 2230404.0,
    "cert": 432699.94,
    "comp": 425090.74,
-   "dev": 100419.85
+   "dev": 118469.85
   },
   {
    "codigo": "006-1160",
    "nombre": "PROGRAMA INTEGRAL NACIONAL PARA EL BIENESTAR FAMILIAR- INABIF",
    "pia": 0.0,
    "pim": 10900474.0,
-   "cert": 5137263.71,
-   "comp": 2330750.0,
+   "cert": 5152763.71,
+   "comp": 2357250.0,
    "dev": 0.0
   },
   {
@@ -63,7 +63,7 @@
    "nombre": "PROGRAMA NACIONAL CONTRA LA VIOLENCIA FAMILIAR Y SEXUAL (PNCVFS)",
    "pia": 0.0,
    "pim": 1499950.0,
-   "cert": 1412569.67,
+   "cert": 1429144.67,
    "comp": 1412569.67,
    "dev": 616519.66
   }
@@ -92,7 +92,7 @@
   {
    "anio": 2026,
    "pim": 448541361.0,
-   "dev": 365293939.94
+   "dev": 365633302.28
   }
  ]
 }
