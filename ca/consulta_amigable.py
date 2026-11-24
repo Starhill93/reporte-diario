@@ -9,11 +9,11 @@ la página del reporte diario lee el .json resultante. Solo usa cifras públicas
   ues        MIMP (pliego 039) por unidad ejecutora, año actual
   fen        INABIF (UE 1160) actividad FEN 5006412, año actual
   fen_ues    MIMP: actividad FEN por unidad ejecutora, año actual
-  historico  INABIF PIM y devengado desde 2022 (los años cerrados se reutilizan del .json anterior)
+  historico  INABIF PIM y devengado desde 2023 (los años cerrados se reutilizan del .json anterior)
 
 Montos: pia, pim, cert, comp (compromiso anual), dev (devengado).
 
-Uso:  python ca/consulta_amigable.py [--salida datos/consulta_amigable.json] [--desde 2022]
+Uso:  python ca/consulta_amigable.py [--salida datos/consulta_amigable.json] [--desde 2023]
 Requiere: requests
 """
 
@@ -127,7 +127,7 @@ def es_inabif(f: dict) -> bool:
     return f["codigo"].endswith(f"-{UE}") or f["codigo"] == UE
 
 
-def actualizar(salida: Path, js: Path | None = None, desde: int = 2022, anio: int | None = None,
+def actualizar(salida: Path, js: Path | None = None, desde: int = 2023, anio: int | None = None,
                siempre: bool = False, log=print) -> dict:
     """Consulta la Consulta Amigable y guarda el .json (y el .js si se pide). Devuelve los datos."""
     anio = anio or datetime.now(LIMA).year
@@ -187,7 +187,7 @@ def actualizar(salida: Path, js: Path | None = None, desde: int = 2022, anio: in
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--salida", type=Path, default=RAIZ / "datos" / "consulta_amigable.json")
-    ap.add_argument("--desde", type=int, default=2022)
+    ap.add_argument("--desde", type=int, default=2023)
     ap.add_argument("--anio", type=int, default=datetime.now(LIMA).year)
     ap.add_argument("--js", type=Path, default=None,
                     help="Además guarda una copia .js (window.CA_LOCAL) para abrir la página con doble clic")
