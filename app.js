@@ -1,7 +1,8 @@
 /* Reporte diario de ejecución — INABIF
- * Arma en el navegador el PPTX "REPORTE_EJECUCIÓN_INABIF_dd.mm.aaaa.pptx" (19 láminas):
+ * Arma en el navegador el PPTX "REPORTE_EJECUCIÓN_INABIF_dd.mm.aaaa.pptx" (20 láminas):
  *   1 carátula · 2 histórico PIM vs devengado · 3 MIMP por UE · 4 INABIF ordinario y FEN ·
- *   5 MIMP FEN por UE · 6 unidades funcionales · 7-18 una por unidad · 19 recursos FEN
+ *   5 MIMP FEN por UE · 6 unidades funcionales · 7-18 una por unidad · 19 recursos FEN ·
+ *   20 PIA 2027 por genérica de gasto (datos fijos)
  * Láminas 2-5: datos/consulta_amigable.json (lo actualiza GitHub Actions).
  * Láminas 6-19: el Excel del SIAF enriquecido (hoja SheetGasto), que se lee aquí y no se sube a ningún lado.
  * Mismo formato que reporte_consulta_amigable.py y reporte_unidades.py.
@@ -229,7 +230,7 @@
     { text: "S/ 13,615,627", options: { bold: true } },
     { text: ", de los cuales " },
     { text: "S/ 10,900,474", options: { bold: true } },
-    { text: " corresponden a la ejecución del Plan de Acción de Contingencia ante el FEN, y " },
+    { text: " corresponden a la ejecución del Plan de Acción de Contingencia ante el FEN; y " },
     { text: "S/ 2,715,153", options: { bold: true } },
     { text: " forman parte del presupuesto ordinario y se distribuyen de la siguiente manera: S/ 2,463,076 corresponden al proyecto de inversión con CUI 2197584 «Mejoramiento y ampliación de los servicios de protección integral a adolescentes mujeres en el CAR Ermelinda Carrera» y S/ 252,077 a la atención al ciudadano y a la familia en emergencia social." },
   ];
@@ -253,15 +254,50 @@
     });
   }
 
-  const ROJO_ETQ = "C0FFEE";      // marca temporal: color de las etiquetas de la 2.a serie (se corrige al final)
+  // Gráfico histórico: desde 2023 (Consulta Amigable) + 2027 con el PIA, fijo y escrito a mano
+  const ANIO_DESDE = 2023;
+  // Última lámina: PIA 2027 por genérica de gasto (Proyecto de Ley de Presupuesto 2027), fijo
+  const PIA_2027 = [
+    ["1. PERSONAL Y OBLIGACIONES SOCIALES", 120481681],
+    ["2. PENSIONES Y OTRAS PRESTACIONES SOCIALES", 16711862],
+    ["3. BIENES Y SERVICIOS", 51262642],
+    ["4. DONACIONES Y TRANSFERENCIAS", 1019379],
+    ["5. OTROS GASTOS", 238161787],
+    ["6. ADQUISICION DE ACTIVOS NO FINANCIEROS", 12500125],
+  ];
+  const PIA_FIJO = { anio: 2027, pia: PIA_2027.reduce((a, [, m]) => a + m, 0) };   // 440,137,476
+
+  function laminaPia(pptx) {
+    const s = interior(pptx);
+    s.addText("ASIGNACIÓN PRESUPUESTARIA SEGÚN PROYECTO DE LEY DE PRESUPUESTO 2027 PARA LA UNIDAD EJECUTORA 006. "
+      + "PROGRAMA INTEGRAL NACIONAL PARA EL BIENESTAR FAMILIAR - INABIF",
+      { x: XT, y: 0.68, w: ANCHO_T, h: 0.66, fill: { color: C.rojo }, fontFace: "Arial", fontSize: 14, bold: true,
+        color: C.blanco, align: "center", valign: "middle", margin: [7.2, 7.2, 3.6, 3.6] });
+    const y = 1.5, n = PIA_2027.length + 2, rh = (Y_FIN - y - 0.2) / n, w = 7.6, x = XT + (ANCHO_T - w) / 2;
+    tarjeta(s, XT, y, ANCHO_T, Y_FIN - y);
+    const base = { fontFace: FUENTE, fontSize: 12, color: C.texto, valign: "middle", margin: [0, 0.08, 0, 0.08] };
+    const cab = ["GENÉRICA DE GASTO", "PIA"].map(t => ({ text: t, options: { ...base, fontFace: "Arial", bold: true,
+      color: C.blanco, fill: { color: C.navy }, align: "center" } }));
+    const cuerpo = PIA_2027.map(([g, m], i) => {
+      const b = [SIN, SIN, i === PIA_2027.length - 1 ? linea(1, C.negro) : linea(0.5, C.linea), SIN];
+      return [{ text: g, options: { ...base, border: b } },
+        { text: miles(m), options: { ...base, color: C.navy, align: "right", border: b } }];
+    });
+    const tot = [{ text: "Total general", options: { ...base, bold: true, align: "center", border: [SIN, SIN, SIN, SIN] } },
+      { text: miles(PIA_FIJO.pia), options: { ...base, bold: true, color: C.navy, align: "right", border: [SIN, SIN, SIN, SIN] } }];
+    s.addTable([cab, ...cuerpo, tot], { x, y: y + 0.1, w, colW: [w * 0.72, w * 0.28], rowH: Array(n).fill(rh), autoPage: false });
+    nota(s, "Fuente: Proyecto de Ley de Presupuesto del Sector Público para el Año Fiscal 2027.");
+  }
+
+  const ROJO_ETQ = "C0FFEE";     // marca temporal: color de las etiquetas de la 2.a serie (se corrige al final)
   function grafico(s, serie, y = 1.2) {
     const h = Y_FIN - y;
     tarjeta(s, XT, y, ANCHO_T, h);
-    const etiquetas = serie.map(a => `${a.anio}\nEjec. ${fpct(a.pim ? a.dev / a.pim : 0)}`);
+    const etiquetas = serie.map(a => a.pia ? `${a.anio}\nPIA` : `${a.anio}\nEjec. ${fpct(a.pim ? a.dev / a.pim : 0)}`);
     const r1 = v => Math.round(v / 1e5) / 10;
     s.addChart("bar", [
-      { name: "PIM", labels: etiquetas, values: serie.map(a => r1(a.pim)) },
-      { name: "Devengado", labels: etiquetas, values: serie.map(a => r1(a.dev)) },
+      { name: "PIM", labels: etiquetas, values: serie.map(a => r1(a.pia || a.pim)) },
+      { name: "Devengado", labels: etiquetas, values: serie.map(a => (a.pia ? null : r1(a.dev))) },
     ], { x: XT + 0.15, y: y + 0.1, w: ANCHO_T - 0.3, h: h - 0.2, barDir: "col", barGrouping: "clustered",
       barGapWidthPct: 60, barOverlapPct: -10, chartColors: [C.navy, C.rojo],
       showLegend: true, legendPos: "t", legendFontSize: 10, legendFontFace: FUENTE, legendColor: C.texto,
@@ -278,6 +314,7 @@
     for (const nombre of Object.keys(zip.files).filter(n => /^ppt\/charts\/chart\d+\.xml$/.test(n))) {
       let xml = await zip.file(nombre).async("string");
       if (!xml.includes(ROJO_ETQ)) continue;
+      xml = xml.replace(/<c:pt idx="\d+"><c:v><\/c:v><\/c:pt>/g, "");   // sin barra ni etiqueta (2027 no tiene devengado)
       let i = 0;
       xml = xml.replace(/<c:ser>[\s\S]*?<\/c:ser>/g, ser => ser.split(ROJO_ETQ).join(i++ === 0 ? C.navy : C.rojo));
       xml = xml.split(ROJO_ETQ).join(C.navy);
@@ -303,26 +340,32 @@
     if (ca) {
       const c = ca.consultado ? new Date(ca.consultado) : null;
       const cuando = c ? `${fechaTxt(c)} ${p2(c.getHours())}:${p2(c.getMinutes())}` : hoy;
-      const notaCA = `Fuente: Consulta Amigable – MEF · consultado el ${cuando}`;
+      // Consulta Amigable muestra la ejecución hasta el día anterior a la consulta
+      const dia = new Date(c || fecha);
+      dia.setDate(dia.getDate() - 1);
+      const ayer = fechaTxt(dia);
+      const notaCA = `Fuente: Consulta Amigable – MEF · información al ${ayer} (consultado el ${cuando})`;
       const ues = ca.ues.map(u => ({ ...fila(u.nombre, u), codigo: u.codigo }));
       const inabif = ues.find(esInabif) || fila("INABIF");
       const fen = fila("Presupuesto FEN", ca.fen || {});
 
       let s = interior(pptx);
-      const serie = ca.historico || [];
+      // años de la Consulta Amigable desde ANIO_DESDE + la columna fija del PIA siguiente (no sale del MEF)
+      const real = (ca.historico || []).filter(a => a.anio >= ANIO_DESDE && a.anio < PIA_FIJO.anio);
+      const serie = real.length ? [...real, PIA_FIJO] : [];
       if (serie.length) {
-        encabezadoRojo(s, `INABIF – PIM VS. DEVENGADO ${serie[0].anio}–${serie[serie.length - 1].anio} (S/ MILLONES)`);
+        encabezadoRojo(s, `INABIF – PIM VS. DEVENGADO ${serie[0].anio}–${PIA_FIJO.anio} (S/ MILLONES)`);
         grafico(s, serie);
-        nota(s, `${notaCA}. ${serie[serie.length - 1].anio}: ejecución acumulada.`);
+        nota(s, `${notaCA}. ${real[real.length - 1].anio}: ejecución acumulada al ${ayer}. ${PIA_FIJO.anio}: PIA.`);
       }
 
       s = interior(pptx);
-      encabezadoRojo(s, `MIMP – EJECUCIÓN POR UNIDAD EJECUTORA – ${hoy}`);
+      encabezadoRojo(s, `MIMP – EJECUCIÓN POR UNIDAD EJECUTORA – ${ayer}`);
       tablaLlena(s, "UNIDAD EJECUTORA", ues.map(f => ({ f, nombre: nombreUE(f) })), sumar(ues, "Total"));
       nota(s, notaCA);
 
       s = interior(pptx);
-      encabezadoRojo(s, `INABIF – PRESUPUESTO ORDINARIO Y FEN – ${hoy}`);
+      encabezadoRojo(s, `INABIF – PRESUPUESTO ORDINARIO Y FEN – ${ayer}`);
       const ordinario = restar(inabif, fen, "Presupuesto ordinario");
       tablaLlena(s, "PRESUPUESTO", [{ f: ordinario, nombre: ordinario.nombre }, { f: fen, nombre: fen.nombre }], inabif, 4.56);
       notaFen(s);
@@ -331,7 +374,7 @@
       if (ca.fen_ues && ca.fen_ues.length) {
         const fu = ca.fen_ues.map(u => ({ ...fila(u.nombre, u), codigo: u.codigo }));
         s = interior(pptx);
-        encabezadoRojo(s, `MIMP – RECURSOS FEN POR UNIDAD EJECUTORA – ${hoy}`);
+        encabezadoRojo(s, `MIMP – RECURSOS FEN POR UNIDAD EJECUTORA – ${ayer}`);
         tablaLlena(s, "UNIDAD EJECUTORA", fu.map(f => ({ f, nombre: nombreUE(f) })), sumar(fu, "Total"));
         nota(s, `Actividad 5006412: Intervenciones extraordinarias del Fenómeno El Niño - FEN. ${notaCA}`);
       }
@@ -364,6 +407,9 @@
       tabla(s, "CONCEPTO", ex.fen.map(f => ({ f, nombre: f.nombre })), t, 2.08, { filaMax: 0.6 });
       nota(s, notaU);
     }
+
+    // última · PIA 2027 por genérica de gasto (datos fijos)
+    laminaPia(pptx);
     return pptx;
   }
 
