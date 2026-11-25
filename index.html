@@ -131,12 +131,11 @@
     try {
       EX = R.leerExcel(await file.arrayBuffer());
       FECHA = EX.fecha || new Date();
-      // hora: la del nombre que pone el SIAF; si no, la de FEC_REP (si trae); si no, hay que escribirla
-      const h = R.horaDelNombre(file.name)
-        || (FECHA.getHours() || FECHA.getMinutes() ? `${String(FECHA.getHours()).padStart(2, "0")}:${String(FECHA.getMinutes()).padStart(2, "0")}` : "");
-      $("hora").value = h;
-      $("origenHora").textContent = h ? "(del nombre del archivo SIAF)" : "(el archivo no la trae: escríbela)";
-      $("origenHora").className = h ? "nota" : "nota mal";
+      // hora: la que el SIAF pone en el nombre del archivo; si no está, la hora del archivo subido
+      const hhmm = d => `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+      const hn = R.horaDelNombre(file.name);
+      $("hora").value = hn || hhmm(new Date(file.lastModified));
+      $("origenHora").textContent = hn ? "(del nombre del archivo SIAF)" : "(hora en que se guardó el archivo · puedes cambiarla)";
       $("zonaTitulo").textContent = file.name;
       $("estExcel").textContent = `${EX.unidades.size} unidades · fecha ${R.fechaTxt(FECHA)}`;
       $("estExcel").className = "ok";
