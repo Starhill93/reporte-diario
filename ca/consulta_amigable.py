@@ -9,7 +9,7 @@ la página del reporte diario lee el .json resultante. Solo usa cifras públicas
   ues        MIMP (pliego 039) por unidad ejecutora, año actual
   fen        INABIF (UE 1160) actividad FEN 5006412, año actual
   fen_ues    MIMP: actividad FEN por unidad ejecutora, año actual
-  historico  INABIF PIM y devengado desde 2023 (los años cerrados se reutilizan del .json anterior)
+  historico  INABIF PIA, PIM y devengado desde 2023 (los años cerrados se reutilizan del .json anterior)
 
 Montos: pia, pim, cert, comp (compromiso anual), dev (devengado).
 
@@ -137,7 +137,7 @@ def actualizar(salida: Path, js: Path | None = None, desde: int = 2023, anio: in
             previo = json.loads(salida.read_text(encoding="utf-8"))
         except ValueError:
             pass
-    cerrados = {h["anio"]: h for h in previo.get("historico", []) if h["anio"] < anio}
+    cerrados = {h["anio"]: h for h in previo.get("historico", []) if h["anio"] < anio and "pia" in h}
 
     ues, fen = ues_del_pliego(anio, con_fen=True)
     inabif = next((u for u in ues if es_inabif(u)), None)
@@ -155,10 +155,10 @@ def actualizar(salida: Path, js: Path | None = None, desde: int = 2023, anio: in
             if f is None:
                 log(f"{a}: sin INABIF, se omite")
                 continue
-            cerrados[a] = {"anio": a, "pim": f["pim"], "dev": f["dev"]}
-            log(f"{a}: PIM {f['pim']:,.0f} · dev {f['dev']:,.0f}")
+            cerrados[a] = {"anio": a, "pia": f["pia"], "pim": f["pim"], "dev": f["dev"]}
+            log(f"{a}: PIA {f['pia']:,.0f} · PIM {f['pim']:,.0f} · dev {f['dev']:,.0f}")
         historico.append(cerrados[a])
-    historico.append({"anio": anio, "pim": inabif["pim"], "dev": inabif["dev"]})
+    historico.append({"anio": anio, "pia": inabif["pia"], "pim": inabif["pim"], "dev": inabif["dev"]})
 
     datos = {
         "consultado": datetime.now(LIMA).strftime("%Y-%m-%dT%H:%M"),
