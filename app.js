@@ -1,10 +1,10 @@
 /* Reporte diario de ejecución — INABIF
- * Arma en el navegador el PPTX "REPORTE_EJECUCIÓN_INABIF_dd.mm.aaaa.pptx" (20 láminas):
- *   1 carátula · 2 histórico PIM vs devengado · 3 MIMP por UE · 4 INABIF ordinario y FEN ·
- *   5 MIMP FEN por UE · 6 unidades funcionales · 7-18 una por unidad · 19 recursos FEN ·
- *   20 PIA 2027 por genérica de gasto (datos fijos)
- * Láminas 2-5: datos/consulta_amigable.json (lo actualiza GitHub Actions).
- * Láminas 6-19: el Excel del SIAF enriquecido (hoja SheetGasto), que se lee aquí y no se sube a ningún lado.
+ * Arma en el navegador el PPTX "REPORTE_EJECUCIÓN_INABIF_dd.mm.aaaa.pptx" (19 láminas):
+ *   1 carátula · 2 PIA 2023-2027 · 3 MIMP por UE (ordinario y FEN) · 4 unidades funcionales ·
+ *   5 gráfico saldo por certificar por unidad · 6-17 una por unidad · 18 recursos FEN ·
+ *   19 PIA 2027 por genérica de gasto (datos fijos)
+ * Láminas 2-3: datos/consulta_amigable.json (lo actualiza GitHub Actions).
+ * Láminas 4-18: el Excel del SIAF enriquecido (hoja SheetGasto), que se lee aquí y no se sube a ningún lado.
  * Mismo formato que reporte_consulta_amigable.py y reporte_unidades.py.
  */
 (() => {
@@ -67,12 +67,15 @@
   const nf0 = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
   const miles = v => nf0.format(Math.abs(v) < 0.5 ? 0 : v);
   const fpct = v => `${(v * 100).toFixed(1)}%`;
+  const npct = v => (v * 100).toFixed(1);      // en las tablas: la columna ya dice "%", el valor va sin el signo
   const p2 = n => String(n).padStart(2, "0");
   const fechaTxt = d => `${p2(d.getDate())}/${p2(d.getMonth() + 1)}/${d.getFullYear()}`;
   const mill = (v, dec = 2) => Math.abs(v) < 1e6 ? `S/ ${miles(v)}` : `S/ ${(v / 1e6).toFixed(dec).replace(/\.?0+$/, "")} mill`;
-  const celdas = (f, etq) => [etq, miles(f.pim), miles(f.cert), fpct(pct(f, f.cert)), miles(f.comp),
-    fpct(pct(f, f.comp)), miles(f.dev), fpct(pct(f, f.dev)), miles(f.pim - f.cert)];
-  const porDevengado = filas => [...filas].sort((a, b) => pct(b.f, b.f.dev) - pct(a.f, a.f.dev));
+  const celdas = (f, etq) => [etq, miles(f.pim), miles(f.cert), npct(pct(f, f.cert)), miles(f.comp),
+    npct(pct(f, f.comp)), miles(f.dev), npct(pct(f, f.dev)), miles(f.pim - f.cert)];
+  // todas las tablas: de mayor a menor saldo por certificar (PIM − certificado)
+  const saldo = f => f.pim - f.cert;
+  const porSaldo = filas => [...filas].sort((a, b) => saldo(b.f) - saldo(a.f));
 
   // ── Lectura del Excel ─────────────────────────────────────────────────
   function leerExcel(buf) {
@@ -90,6 +93,7 @@
     const num = v => (typeof v === "number" && isFinite(v) ? v : 0);
     const meses = Array.from({ length: 12 }, (_, i) => ix["mto_devenga_" + p2(i + 1)]).filter(i => i != null);
     const unidades = new Map(), conceptos = new Map(), fen = new Map();
+    const sinFen = new Map();      // conceptos de cada unidad sin las filas FEN (para la lámina de cada unidad)
     let fecha = null, sinUnidad = 0;
     for (let i = h + 1; i < aoa.length; i++) {
       const r = aoa[i];
@@ -109,6 +113,11 @@
       if (tc in FEN_CONCEPTOS) {
         if (!fen.has(tc)) fen.set(tc, fila(FEN_CONCEPTOS[tc]));
         sumarA(fen.get(tc), m);
+      } else {
+        if (!sinFen.has(sig)) sinFen.set(sig, new Map());
+        const sf = sinFen.get(sig);
+        if (!sf.has(con)) sf.set(con, fila(con));
+        sumarA(sf.get(con), m);
       }
     }
     if (!unidades.size) throw new Error("La hoja SheetGasto no tiene filas de datos.");
@@ -118,7 +127,7 @@
     if (otras.length) avisos.push(`Unidades no previstas: ${otras.join(", ")} (van al final).`);
     if (!fen.size) avisos.push("El Excel no trae los conceptos FEN (TIPO CENTRO 213/214/215): no habrá lámina FEN.");
     return {
-      unidades, conceptos, fecha,
+      unidades, conceptos, sinFen, fecha,
       fen: Object.keys(FEN_CONCEPTOS).filter(k => fen.has(k)).map(k => fen.get(k)),
       avisos,
     };
@@ -131,7 +140,7 @@
       if (!out.has(k)) out.set(k, fila(k));
       sumarA(out.get(k), f);
     }
-    return porDevengado([...out.values()].filter(f => Math.abs(f.pim) > 0.5 || Math.abs(f.dev) > 0.5).map(f => ({ f, nombre: f.nombre })));
+    return porSaldo([...out.values()].filter(f => Math.abs(f.pim) > 0.5 || Math.abs(f.dev) > 0.5).map(f => ({ f, nombre: f.nombre })));
   }
 
   // ── Componentes de lámina ─────────────────────────────────────────────
@@ -205,10 +214,14 @@
     const base = { fontFace: FUENTE, valign: "middle", margin: [0, 0.03, 0, 0.03] };
     const cab = [etiqueta, ...CABECERAS].map(t => ({ text: t, options: { ...base, fontFace: "Arial", fontSize: fCab,
       bold: true, color: C.blanco, fill: { color: C.navy }, align: "center", border: [SIN, SIN, linea(0.5, C.linea), SIN] } }));
-    const cuerpo = filas.map(({ f, nombre }, i) => {
+    // fila con grupo: true → subtotal en negrita; con sub: true → desagregado, sangrado y en cursiva
+    const cuerpo = filas.map(({ f, nombre, grupo, sub }, i) => {
       const ultima = i === filas.length - 1;
-      return celdas(f, nombre).map((t, j) => ({ text: t, options: { ...base, fontSize: font, bold: j === 6,
+      return celdas(f, nombre).map((t, j) => ({ text: t, options: { ...base, fontSize: sub ? font - 0.5 : font,
+        bold: grupo || (!sub && j === 6), italic: !!sub && !j,
         color: j ? C.navy : C.texto, align: j ? "right" : "left",
+        margin: sub && !j ? [0, 0.03, 0, 0.22] : base.margin,
+        fill: grupo ? { color: C.fondo } : undefined,
         border: [SIN, SIN, ultima ? linea(0.75, C.negro) : linea(0.5, C.linea), SIN] } }));
     });
     const tot = celdas(total, "Total").map((t, j) => ({ text: t, options: { ...base, fontSize: font + 0.5, bold: true,
@@ -216,14 +229,20 @@
     s.addTable([cab, ...cuerpo, tot], { x: XT + 0.18, y: y + 0.1, w: tw, colW: pesos.map(p => tw * p / suma), rowH, autoPage: false });
   }
 
-  // tablas de la Consulta Amigable (reporte_consulta_amigable.py · tabla_llena)
-  function tablaLlena(s, etiqueta, filas, total, yFin = Y_FIN) {
-    const grande = ["pim", "cert", "comp", "dev"].some(k => Math.abs(total[k]) >= 1e9);
-    tabla(s, etiqueta, porDevengado(filas), total, 1.18,
-      { filaMax: 1.2, fontMax: grande ? 9.5 : 10.5, pesos: PESOS_CA, cabFija: 0.42, yFin });
+  // MIMP por UE: cada UE con su presupuesto ordinario y FEN debajo (FEN = actividad 5006412)
+  function tablaUesOrdFen(s, ues, fenUes, yFin = Y_FIN) {
+    const filas = [];
+    for (const { f } of porSaldo(ues.map(f => ({ f })))) {
+      const fu = fenUes.find(x => x.codigo === f.codigo) || fila("FEN");
+      filas.push({ f, nombre: nombreUE(f), grupo: true },
+        { f: restar(f, fu, ""), nombre: "Presupuesto ordinario", sub: true },
+        { f: fu, nombre: "Presupuesto FEN", sub: true });
+    }
+    tabla(s, "UNIDAD EJECUTORA", filas, sumar(ues, "Total"), 1.18,
+      { filaMax: 0.34, fontMax: 8.5, pesos: [4.1, 1.15, 1.15, 0.5, 1.15, 0.5, 1.15, 0.5, 1.15], cabFija: 0.36, yFin });
   }
 
-  // Nota de la lámina "Presupuesto ordinario y FEN": de dónde sale el FEN (NM 330)
+  // Nota de la RM 545-2026-MIMP sobre el FEN (va debajo de la tabla MIMP por unidad ejecutora)
   const NOTA_FEN = [
     { text: "Nota: ", options: { bold: true } },
     { text: "Mediante la RM N.° 545-2026-MIMP, del 5 de noviembre de 2026, que aprueba el crédito suplementario en el marco del Fenómeno El Niño, se asignó a INABIF " },
@@ -234,9 +253,9 @@
     { text: "S/ 2,715,153", options: { bold: true } },
     { text: " forman parte del presupuesto ordinario y se distribuyen de la siguiente manera: S/ 2,463,076 corresponden al proyecto de inversión con CUI 2197584 «Mejoramiento y ampliación de los servicios de protección integral a adolescentes mujeres en el CAR Ermelinda Carrera» y S/ 252,077 a la atención al ciudadano y a la familia en emergencia social." },
   ];
-  function notaFen(s, y = 4.66) {
+  function notaFen(s, y = 4.66, font = 8) {
     s.addText(NOTA_FEN.map(p => ({ text: p.text, options: { ...(p.options || {}) } })),
-      { x: XT, y, w: ANCHO_T, h: Y_FIN - y + 0.02, fontFace: FUENTE, fontSize: 8, color: C.texto, valign: "middle",
+      { x: XT, y, w: ANCHO_T, h: Y_FIN - y + 0.02, fontFace: FUENTE, fontSize: font, color: C.texto, valign: "middle",
         fill: { color: C.blanco }, line: { color: C.borde, width: 0.75 }, margin: [7.2, 7.2, 3.6, 3.6] });
   }
 
@@ -293,18 +312,33 @@
   function grafico(s, serie, y = 1.2) {
     const h = Y_FIN - y;
     tarjeta(s, XT, y, ANCHO_T, h);
-    const etiquetas = serie.map(a => a.pia ? `${a.anio}\nPIA` : `${a.anio}\nEjec. ${fpct(a.pim ? a.dev / a.pim : 0)}`);
+    const etiquetas = serie.map(a => String(a.anio));
     const r1 = v => Math.round(v / 1e5) / 10;
     s.addChart("bar", [
-      { name: "PIM", labels: etiquetas, values: serie.map(a => r1(a.pia || a.pim)) },
-      { name: "Devengado", labels: etiquetas, values: serie.map(a => (a.pia ? null : r1(a.dev))) },
+      { name: "PIA", labels: etiquetas, values: serie.map(a => r1(a.pia)) },
     ], { x: XT + 0.15, y: y + 0.1, w: ANCHO_T - 0.3, h: h - 0.2, barDir: "col", barGrouping: "clustered",
-      barGapWidthPct: 60, barOverlapPct: -10, chartColors: [C.navy, C.rojo],
-      showLegend: true, legendPos: "t", legendFontSize: 10, legendFontFace: FUENTE, legendColor: C.texto,
-      showValue: true, dataLabelFormatCode: "#,##0.0", dataLabelPosition: "outEnd", dataLabelFontSize: 11,
-      dataLabelFontBold: true, dataLabelFontFace: FUENTE, dataLabelColor: ROJO_ETQ,
+      barGapWidthPct: 80, chartColors: [C.navy],
+      showLegend: false,
+      showValue: true, dataLabelFormatCode: "#,##0.0", dataLabelPosition: "outEnd", dataLabelFontSize: 12,
+      dataLabelFontBold: true, dataLabelFontFace: FUENTE, dataLabelColor: C.navy,
       valAxisHidden: true, valGridLine: { style: "none" }, catGridLine: { style: "none" },
       catAxisLabelFontSize: 11, catAxisLabelFontBold: true, catAxisLabelFontFace: FUENTE, catAxisLabelColor: C.texto,
+      catAxisLineShow: true, catAxisLineColor: C.linea, catAxisMajorTickMark: "none", valAxisMajorTickMark: "none" });
+  }
+
+  // Columnas: saldo por certificar (PIM − certificado) de cada unidad funcional, de mayor a menor
+  function graficoSaldos(s, filas, y = 1.2) {
+    const h = Y_FIN - y;
+    tarjeta(s, XT, y, ANCHO_T, h);
+    s.addChart("bar", [{ name: "Saldo por certificar", labels: filas.map(x => x.sigla),
+      values: filas.map(x => Math.round(x.f.pim - x.f.cert)) }],
+    { x: XT + 0.15, y: y + 0.1, w: ANCHO_T - 0.3, h: h - 0.2, barDir: "col", barGapWidthPct: 45,
+      chartColors: [C.navy], showLegend: false,
+      valAxisMinVal: 0, valAxisMaxVal: Math.max(1, ...filas.map(x => x.f.pim - x.f.cert)) * 1.15,   // aire para la etiqueta
+      showValue: true, dataLabelFormatCode: "#,##0", dataLabelPosition: "outEnd", dataLabelFontSize: 10,
+      dataLabelFontBold: true, dataLabelFontFace: FUENTE, dataLabelColor: C.navy,
+      valAxisHidden: true, valGridLine: { style: "none" }, catGridLine: { style: "none" },
+      catAxisLabelFontSize: 10, catAxisLabelFontBold: true, catAxisLabelFontFace: FUENTE, catAxisLabelColor: C.texto,
       catAxisLineShow: true, catAxisLineColor: C.linea, catAxisMajorTickMark: "none", valAxisMajorTickMark: "none" });
   }
 
@@ -327,11 +361,12 @@
   const nombreUE = f => (f.codigo ? `${f.codigo}: ${f.nombre}` : f.nombre);
   const esInabif = f => f.codigo === UE || String(f.codigo).endsWith("-" + UE);
 
-  function construir(ex, ca, fecha) {
+  function construir(ex, ca, fecha, hora) {
     const pptx = new PptxGenJS();
     pptx.layout = "LAYOUT_16x9";
     pptx.title = "Avance de ejecución presupuestal INABIF";
-    const hoy = fechaTxt(fecha);
+    // fecha y hora de la matriz del SIAF (la hora va en todas las láminas que salen del Excel)
+    const hoy = fechaTxt(fecha) + (/^\d{1,2}:\d{2}$/.test(hora || "") ? ` ${hora.padStart(5, "0")}` : "");
     const notaU = `Fuente: SIAF – MEF (Reporte de Gasto) · ${hoy}`;
 
     portada(pptx, hoy);
@@ -346,65 +381,63 @@
       const ayer = fechaTxt(dia);
       const notaCA = `Fuente: Consulta Amigable – MEF · información al ${ayer} (consultado el ${cuando})`;
       const ues = ca.ues.map(u => ({ ...fila(u.nombre, u), codigo: u.codigo }));
-      const inabif = ues.find(esInabif) || fila("INABIF");
-      const fen = fila("Presupuesto FEN", ca.fen || {});
+      const fenUes = (ca.fen_ues || []).map(u => ({ ...fila(u.nombre, u), codigo: u.codigo }));
 
+      // 2 · PIA: 2023-2026 de la Consulta Amigable + 2027 fijo (Proyecto de Ley de Presupuesto 2027)
       let s = interior(pptx);
-      // años de la Consulta Amigable desde ANIO_DESDE + la columna fija del PIA siguiente (no sale del MEF)
-      const real = (ca.historico || []).filter(a => a.anio >= ANIO_DESDE && a.anio < PIA_FIJO.anio);
-      const serie = real.length ? [...real, PIA_FIJO] : [];
-      if (serie.length) {
-        encabezadoRojo(s, `INABIF – PIM VS. DEVENGADO ${serie[0].anio}–${PIA_FIJO.anio} (S/ MILLONES)`);
-        grafico(s, serie);
-        nota(s, `${notaCA}. ${real[real.length - 1].anio}: ejecución acumulada al ${ayer}. ${PIA_FIJO.anio}: PIA.`);
-      }
+      const real = (ca.historico || []).filter(a => a.anio >= ANIO_DESDE && a.anio < PIA_FIJO.anio && a.pia != null);
+      const serie = [...real, PIA_FIJO];
+      encabezadoRojo(s, `INABIF – PIA ${serie[0].anio}–${PIA_FIJO.anio} (S/ MILLONES)`);
+      grafico(s, serie);
+      nota(s, `Fuente: Consulta Amigable – MEF (consultado el ${cuando})${real.length ? `, ${real[0].anio}–${real[real.length - 1].anio}` : ""}; `
+        + `${PIA_FIJO.anio}: Proyecto de Ley de Presupuesto del Sector Público para el Año Fiscal ${PIA_FIJO.anio}.`);
 
+      // 3 · MIMP por UE, cada una con presupuesto ordinario y FEN
       s = interior(pptx);
       encabezadoRojo(s, `MIMP – EJECUCIÓN POR UNIDAD EJECUTORA – ${ayer}`);
-      tablaLlena(s, "UNIDAD EJECUTORA", ues.map(f => ({ f, nombre: nombreUE(f) })), sumar(ues, "Total"));
-      nota(s, notaCA);
-
-      s = interior(pptx);
-      encabezadoRojo(s, `INABIF – PRESUPUESTO ORDINARIO Y FEN – ${ayer}`);
-      const ordinario = restar(inabif, fen, "Presupuesto ordinario");
-      tablaLlena(s, "PRESUPUESTO", [{ f: ordinario, nombre: ordinario.nombre }, { f: fen, nombre: fen.nombre }], inabif, 4.56);
-      notaFen(s);
-      nota(s, notaCA);
-
-      if (ca.fen_ues && ca.fen_ues.length) {
-        const fu = ca.fen_ues.map(u => ({ ...fila(u.nombre, u), codigo: u.codigo }));
-        s = interior(pptx);
-        encabezadoRojo(s, `MIMP – RECURSOS FEN POR UNIDAD EJECUTORA – ${ayer}`);
-        tablaLlena(s, "UNIDAD EJECUTORA", fu.map(f => ({ f, nombre: nombreUE(f) })), sumar(fu, "Total"));
-        nota(s, `Actividad 5006412: Intervenciones extraordinarias del Fenómeno El Niño - FEN. ${notaCA}`);
-      }
+      tablaUesOrdFen(s, ues, fenUes, 4.6);
+      notaFen(s, 4.66, 7.5);
+      nota(s, `Presupuesto FEN: actividad 5006412 Intervenciones extraordinarias del Fenómeno El Niño. ${notaCA}`);
     }
 
-    // 6 · unidades funcionales
+    // 4 · unidades funcionales
     const orden = [...UNIDADES.map(u => u[0]).filter(u => ex.unidades.has(u)), ...[...ex.unidades.keys()].filter(u => !(u in NOMBRES))];
     let s = interior(pptx);
     encabezadoRojo(s, `EJECUCIÓN PRESUPUESTAL POR UNIDADES FUNCIONALES – ${hoy}`);
-    const filasU = orden.map(u => ({ f: ex.unidades.get(u), nombre: NOMBRES[u] || u }));
+    // de mayor a menor saldo por certificar (PIM − certificado)
+    // la UA va sin sus montos FEN (aquí, en el gráfico de saldos y en su propia lámina)
+    const conceptosU = u => (u === "UA" ? (ex.sinFen.get(u) || new Map()) : ex.conceptos.get(u));
+    const montosU = u => (u === "UA" ? sumar([...conceptosU(u).values()], u) : ex.unidades.get(u));
+    const filasU = orden.map(u => ({ f: montosU(u), nombre: NOMBRES[u] || u, sigla: u }))
+      .sort((a, b) => (b.f.pim - b.f.cert) - (a.f.pim - a.f.cert));
     tabla(s, "UNIDAD FUNCIONAL", filasU, sumar(filasU.map(x => x.f), "Total"), 1.18);
     nota(s, notaU);
 
-    // 7-18 · una lámina por unidad
+    // 5 · gráfico del saldo por certificar por unidad funcional
+    s = interior(pptx);
+    encabezadoRojo(s, `SALDO POR CERTIFICAR POR UNIDAD FUNCIONAL – ${hoy} (S/)`);
+    graficoSaldos(s, filasU);
+    nota(s, `Saldo por certificar = PIM − certificado. ${notaU}`);
+
+    // 6-17 · una lámina por unidad
     for (const u of orden) {
       s = interior(pptx);
       encabezadoRojo(s, `${u} – EJECUCIÓN PRESUPUESTAL – ${hoy}`);
       s.addText(NOMBRES[u] || u, { x: XT + 0.02, y: 1.12, w: ANCHO_T, h: 0.16, fontFace: FUENTE, fontSize: 8.5,
         bold: true, color: C.navy, valign: "top", margin: 0 });
-      tabla(s, "CONCEPTO", agruparConceptos(ex.conceptos.get(u)), ex.unidades.get(u), 1.34);
+      // en la UA se restan los montos FEN (sin separar ordinario/FEN); las demás, completas
+      const cs = conceptosU(u);
+      tabla(s, "CONCEPTO", agruparConceptos(cs), sumar([...cs.values()], "Total"), 1.34);
       nota(s, notaU);
     }
 
-    // 19 · recursos FEN
+    // 18 · recursos FEN
     if (ex.fen.length) {
       s = interior(pptx);
       encabezadoRojo(s, `EJECUCIÓN DE RECURSOS FEN – ${hoy}`);
       const t = sumar(ex.fen, "Total");
       indicadoresFen(s, t);
-      tabla(s, "CONCEPTO", ex.fen.map(f => ({ f, nombre: f.nombre })), t, 2.08, { filaMax: 0.6 });
+      tabla(s, "CONCEPTO", porSaldo(ex.fen.map(f => ({ f, nombre: f.nombre }))), t, 2.08, { filaMax: 0.6 });
       nota(s, notaU);
     }
 
@@ -413,13 +446,16 @@
     return pptx;
   }
 
-  async function generar(ex, ca, fecha) {
-    const pptx = construir(ex, ca, fecha);
+  async function generar(ex, ca, fecha, hora) {
+    const pptx = construir(ex, ca, fecha, hora);
     const buf = await pptx.write({ outputType: "arraybuffer" });
     return colorearEtiquetas(buf);
   }
 
   const nombreArchivo = fecha => `REPORTE_EJECUCIÓN_INABIF_${p2(fecha.getDate())}.${p2(fecha.getMonth() + 1)}.${fecha.getFullYear()}.pptx`;
 
-  window.ReporteDiario = { leerExcel, generar, nombreArchivo, fechaTxt };
+  // Hora del reporte SIAF: el SIAF la pone en el nombre del archivo (ReporteGasto - 2026-11-19T180425.270.xls → 18:04)
+  const horaDelNombre = nombre => { const m = String(nombre).match(/T(\d{2})(\d{2})\d{2}/); return m ? `${m[1]}:${m[2]}` : ""; };
+
+  window.ReporteDiario = { leerExcel, generar, nombreArchivo, fechaTxt, horaDelNombre };
 })();
