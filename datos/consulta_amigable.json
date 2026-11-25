@@ -1,5 +1,5 @@
 {
- "consultado": "2026-11-24T20:06",
+ "consultado": "2026-11-25T15:46",
  "anio": 2026,
  "ues": [
   {
@@ -7,27 +7,27 @@
    "nombre": "MINISTERIO DE LA MUJER Y POBLACIONES VULNERABLES- ADM. NIVEL CENTRAL",
    "pia": 218131283.0,
    "pim": 221167609.0,
-   "cert": 207025508.91,
-   "comp": 203082274.53,
-   "dev": 172958921.91
+   "cert": 208792169.83,
+   "comp": 206557438.75,
+   "dev": 173433529.38
   },
   {
    "codigo": "006-1160",
    "nombre": "PROGRAMA INTEGRAL NACIONAL PARA EL BIENESTAR FAMILIAR- INABIF",
    "pia": 448367312.0,
    "pim": 448541361.0,
-   "cert": 436165849.43,
-   "comp": 431137323.85,
-   "dev": 365633302.28
+   "cert": 444853135.7,
+   "comp": 446317444.95,
+   "dev": 365813087.69
   },
   {
    "codigo": "009-1232",
    "nombre": "PROGRAMA NACIONAL CONTRA LA VIOLENCIA FAMILIAR Y SEXUAL (PNCVFS)",
    "pia": 374037199.0,
    "pim": 372649212.0,
-   "cert": 366796198.42,
-   "comp": 362961981.4,
-   "dev": 322160890.36
+   "cert": 366104207.07,
+   "comp": 363273280.95,
+   "dev": 322363856.03
   }
  ],
  "fen": {
@@ -35,8 +35,8 @@
   "nombre": "INTERVENCIONES EXTRAORDINARIAS DEL FENOMENO EL NIÑO - FEN",
   "pia": 0.0,
   "pim": 10900474.0,
-  "cert": 5152763.71,
-  "comp": 2357250.0,
+  "cert": 10753063.4,
+  "comp": 12005768.8,
   "dev": 0.0
  },
  "fen_ues": [
@@ -45,17 +45,17 @@
    "nombre": "MINISTERIO DE LA MUJER Y POBLACIONES VULNERABLES- ADM. NIVEL CENTRAL",
    "pia": 0.0,
    "pim": 2230404.0,
-   "cert": 432699.94,
-   "comp": 425090.74,
-   "dev": 118469.85
+   "cert": 677970.94,
+   "comp": 832684.74,
+   "dev": 142169.85
   },
   {
    "codigo": "006-1160",
    "nombre": "PROGRAMA INTEGRAL NACIONAL PARA EL BIENESTAR FAMILIAR- INABIF",
    "pia": 0.0,
    "pim": 10900474.0,
-   "cert": 5152763.71,
-   "comp": 2357250.0,
+   "cert": 10753063.4,
+   "comp": 12005768.8,
    "dev": 0.0
   },
   {
@@ -63,9 +63,9 @@
    "nombre": "PROGRAMA NACIONAL CONTRA LA VIOLENCIA FAMILIAR Y SEXUAL (PNCVFS)",
    "pia": 0.0,
    "pim": 1499950.0,
-   "cert": 1429144.67,
-   "comp": 1412569.67,
-   "dev": 616519.66
+   "cert": 1435769.67,
+   "comp": 1429144.67,
+   "dev": 633094.66
   }
  ],
  "historico": [
@@ -91,7 +91,7 @@
    "anio": 2026,
    "pia": 448367312.0,
    "pim": 448541361.0,
-   "dev": 365633302.28
+   "dev": 365813087.69
   }
  ]
 }
