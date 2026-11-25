@@ -387,9 +387,9 @@
       let s = interior(pptx);
       const real = (ca.historico || []).filter(a => a.anio >= ANIO_DESDE && a.anio < PIA_FIJO.anio && a.pia != null);
       const serie = [...real, PIA_FIJO];
-      encabezadoRojo(s, `INABIF – PIA ${serie[0].anio}–${PIA_FIJO.anio} (S/ MILLONES)`);
+      encabezadoRojo(s, `INABIF – PIA ${serie[0].anio}–${PIA_FIJO.anio}`);
       grafico(s, serie);
-      nota(s, `Fuente: Consulta Amigable – MEF (consultado el ${cuando})${real.length ? `, ${real[0].anio}–${real[real.length - 1].anio}` : ""}; `
+      nota(s, `Cifras en millones de soles. Fuente: Consulta Amigable – MEF (consultado el ${cuando})${real.length ? `, ${real[0].anio}–${real[real.length - 1].anio}` : ""}; `
         + `${PIA_FIJO.anio}: Proyecto de Ley de Presupuesto del Sector Público para el Año Fiscal ${PIA_FIJO.anio}.`);
 
       // 3 · MIMP por UE, cada una con presupuesto ordinario y FEN
@@ -415,7 +415,7 @@
 
     // 5 · gráfico del saldo por certificar por unidad funcional
     s = interior(pptx);
-    encabezadoRojo(s, `SALDO POR CERTIFICAR POR UNIDAD FUNCIONAL – ${hoy} (S/)`);
+    encabezadoRojo(s, `SALDO POR CERTIFICAR POR UNIDAD FUNCIONAL – ${hoy}`);
     graficoSaldos(s, filasU);
     nota(s, `Saldo por certificar = PIM − certificado. ${notaU}`);
 
